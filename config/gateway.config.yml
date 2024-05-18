@@ -1,0 +1,80 @@
+http:
+  port: ${PORT:-9000}
+  host: ${HOST:-localhost}
+
+admin:
+  port: 9876
+  host: localhost
+
+apiEndpoints:
+  all:
+    host: "*"
+    paths: "*"
+  audienceAPIV1:
+    host: '*'
+    paths: ['/presentation/v1/audience', '/presentation/v1/audience/*']
+    methods: 'GET,POST,PUT,PATCH,DELETE'
+  presentationAPIV1:
+    host: '*'
+    paths: ['/presentation', '/presentation/*']
+    methods: 'GET,POST,PUT,PATCH,DELETE'
+
+serviceEndpoints:
+  presentationService:
+    urls:
+      - ${SERVICE_LOAD_BALANCER_URL:-http://localhost:9001}
+
+policies:
+  - cors
+  - expression
+  - proxy
+  - rate-limit
+  - response-transformer
+  - proxy
+  - request-logger
+
+pipelines:
+  logRequest:
+    apiEndpoints:
+      - all
+
+    policies:
+      - request-logger:
+      - response-transformer:
+        - action:
+            headers:
+              add:
+                X-Powered-By: "'Name Later Cloud Gateway'"
+
+  audience:
+    apiEndpoints:
+      - audienceAPIV1
+    policies:
+      - expression:
+        - action:
+            jscode: 'req.url = req.url.replace(/^\/presentation/, "")'
+      - proxy:
+        - action:
+            serviceEndpoint: presentationService
+            xfwd: true
+            changeOrigin: true
+            prependPath: true
+            ignorePath: false
+            stripPath: false
+
+  presentation:
+    apiEndpoints:
+      - presentationAPIV1
+    policies:
+      - scope:
+        - action:
+            scope: ${PRESENTATION_SERVICE_SCOPE}
+      - proxy:
+        - action:
+            serviceEndpoint: presentationService
+            xfwd: true
+            changeOrigin: true
+            prependPath: true
+            ignorePath: false
+            stripPath: true
+            # stripPath: false
