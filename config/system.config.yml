@@ -7,6 +7,8 @@ db:
 plugins:
   logger:
     package: './plugins/logger/manifest.js'
+  custom-proxies:
+    package: './plugins/custom-proxies/manifest.js'
 
 crypto:
   cipherKey: sensitiveKey

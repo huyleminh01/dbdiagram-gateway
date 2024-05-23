@@ -7,74 +7,63 @@ admin:
   host: localhost
 
 apiEndpoints:
-  all:
+  all-api:
     host: "*"
-    paths: "*"
-  audienceAPIV1:
-    host: '*'
-    paths: ['/presentation/v1/audience', '/presentation/v1/audience/*']
-    methods: 'GET,POST,PUT,PATCH,DELETE'
-  presentationAPIV1:
-    host: '*'
-    paths: ['/presentation', '/presentation/*']
-    methods: 'GET,POST,PUT,PATCH,DELETE'
+    paths: ["/api", "/api/*"]
+  all-socket:
+    host: "*"
+    paths: ["/ws", "/ws/*"]
 
 serviceEndpoints:
-  presentationService:
+  dbdiagram-api:
     urls:
-      - ${SERVICE_LOAD_BALANCER_URL:-http://localhost:9001}
+      - ${API_SERVICE01}
+      - ${API_SERVICE02}
+  dbdiagram-socket:
+    urls:
+      - ${WS_SERVICE01}
+      - ${WS_SERVICE02}
 
 policies:
   - cors
   - expression
   - proxy
   - rate-limit
-  - response-transformer
-  - proxy
   - request-logger
+  - dynamic-ws-proxy
+  - dynamic-proxy
 
 pipelines:
-  logRequest:
+  route-all-api:
     apiEndpoints:
-      - all
-
+      - all-api
     policies:
       - request-logger:
-      - response-transformer:
+      - cors:
         - action:
-            headers:
-              add:
-                X-Powered-By: "'Name Later Cloud Gateway'"
-
-  audience:
-    apiEndpoints:
-      - audienceAPIV1
-    policies:
-      - expression:
+            origin: "*"
+            methods: "*"
+      - dynamic-proxy:
         - action:
-            jscode: 'req.url = req.url.replace(/^\/presentation/, "")'
-      - proxy:
-        - action:
-            serviceEndpoint: presentationService
-            xfwd: true
-            changeOrigin: true
-            prependPath: true
-            ignorePath: false
-            stripPath: false
-
-  presentation:
-    apiEndpoints:
-      - presentationAPIV1
-    policies:
-      - scope:
-        - action:
-            scope: ${PRESENTATION_SERVICE_SCOPE}
-      - proxy:
-        - action:
-            serviceEndpoint: presentationService
+            preserveHeaderKeyCase: true
+            serviceEndpoint: dbdiagram-api
             xfwd: true
             changeOrigin: true
             prependPath: true
             ignorePath: false
             stripPath: true
-            # stripPath: false
+
+  route-all-socket:
+    apiEndpoints:
+      - all-socket
+    policies:
+      - request-logger:
+      - dynamic-ws-proxy:
+        - action:
+            serviceEndpoint: dbdiagram-socket
+            xfwd: true
+            changeOrigin: true
+            prependPath: true
+            ignorePath: false
+            stripPath: true
+            stickyWSSession: true
