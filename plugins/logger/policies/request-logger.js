@@ -12,6 +12,10 @@ module.exports = {
     return (req, res, next) => {
       const startTime = process.hrtime();
 
+      Logger.info(`\n\n-----------------------------`);
+      Logger.info(`Request started`);
+      Logger.info(`-----------------------------`);
+
       res.on('finish', () => {
         // caltulate total time that server spent to complete the request
         const totalTime = process.hrtime(startTime);
@@ -35,6 +39,8 @@ module.exports = {
         ].join(' - ');
 
         Logger.info(message);
+        Logger.info(`-----------------------------`);
+        Logger.info(`Request ended`);
         Logger.info(`-----------------------------`);
       });
       next();

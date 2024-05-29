@@ -4,14 +4,41 @@ const { APP_CONFIG } = require('../../config/app-config');
 const winston = require('winston');
 require('winston-daily-rotate-file');
 
+function sanitizeItemToLog(item) {
+  let beautyPayload;
+
+  switch (typeof item) {
+    case 'string':
+      beautyPayload = item;
+      break;
+    case 'number':
+    case 'boolean':
+      beautyPayload = item.toString();
+      break;
+    case 'undefined':
+      beautyPayload = 'undefined';
+      break;
+    case 'function':
+      beautyPayload = '';
+      break;
+    case 'object':
+      beautyPayload = JSON.stringify(item);
+      break;
+    default:
+      beautyPayload = '';
+      break;
+  }
+  return beautyPayload;
+}
+
 /**
  * @description Example:   Logger.debug ("debug", "error", ["debug 3"], {key: "value"}, "and many parameters")
  */
-const formatFunction = winston.format.printf(({ level, timestamp, ms, message, ...rest }) => {
-  const args = rest[Symbol.for('splat')];
-  const outMessage = [message, args].map(JSON.stringify).join(' ');
+const formatFunction = winston.format.printf(({ level, timestamp, message, ...rest }) => {
+  const args = rest[Symbol.for('splat')] || [];
+  const outMessage = [message, ...args].map(sanitizeItemToLog).join(' ');
 
-  return `[${timestamp}] : [${level}] : ${outMessage} ${ms}`;
+  return `[${timestamp}] : [${level}] : ${outMessage}`;
 });
 
 const format = winston.format.combine(winston.format.timestamp(), winston.format.ms(), formatFunction);

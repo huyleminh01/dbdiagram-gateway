@@ -122,6 +122,7 @@ module.exports = {
         { path: /^\/diagram_permission\/(?<diagramId>[\d\w_-]+)$/, method: 'delete' },
         { path: /^\/query\/(?<diagramId>[\d\w_-]+)$/, method: 'delete' },
         { path: /^\/query\/(?<diagramId>[\d\w_-]+)\/rename$/, method: 'put' },
+        { path: /^\/query_access\/$/, method: 'post' },
       ];
 
       const pathToMatch = pathToMatchSessionList.find((item) => {
@@ -130,7 +131,17 @@ module.exports = {
 
       if (pathToMatch) {
         try {
-          const sessionId = req.path.match(pathToMatch.path).groups.diagramId;
+          const matchResult = req.path.match(pathToMatch.path);
+          let sessionId = matchResult.groups?.diagramId;
+          Logger.debug('Session from params', sessionId);
+
+          if (!sessionId) {
+            // try to get diagram ID from the query params
+            Logger.debug('Session from query', req.query.queryId)
+            sessionId = req.query.queryId;
+          }
+
+
           const address = await RedisClient.client.get(sessionId);
 
           Logger.debug('HTTP', sessionId, address);

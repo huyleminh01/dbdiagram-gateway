@@ -3,7 +3,7 @@ const { APP_CONFIG } = require('../config/app-config');
 const { Logger } = require('../common/utils/logger');
 
 const client = createClient({
-  url: `redis://${APP_CONFIG.redis.host}:${APP_CONFIG.redis.port}`,
+  url: `redis://${APP_CONFIG.redis.user}:${APP_CONFIG.redis.password}@${APP_CONFIG.redis.host}:${APP_CONFIG.redis.port}`,
 });
 
 async function initRedisConnectionAsync() {

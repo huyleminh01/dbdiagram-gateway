@@ -9,6 +9,8 @@ const APP_CONFIG = {
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT ? +process.env.REDIS_PORT : 6379,
+    user: process.env.REDIS_user || '',
+    password: process.env.REDIS_PASS || '',
   }
 };
 

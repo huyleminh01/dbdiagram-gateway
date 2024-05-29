@@ -7,6 +7,9 @@ admin:
   host: localhost
 
 apiEndpoints:
+  admin-api:
+    host: "*"
+    paths: ["/admin", "/admin/*"]
   all-api:
     host: "*"
     paths: ["/api", "/api/*"]
@@ -34,6 +37,40 @@ policies:
   - dynamic-proxy
 
 pipelines:
+  route-admin-api:
+    apiEndpoints:
+      - admin-api
+    policies:
+      - request-logger:
+      - cors:
+        - action:
+            origin: "*"
+            methods: "*"
+      - dynamic-proxy:
+        - action:
+            preserveHeaderKeyCase: true
+            serviceEndpoint: dbdiagram-api
+            xfwd: true
+            changeOrigin: true
+            prependPath: true
+            ignorePath: false
+            stripPath: false
+
+  route-all-socket:
+    apiEndpoints:
+      - all-socket
+    policies:
+      - request-logger:
+      - dynamic-ws-proxy:
+        - action:
+            serviceEndpoint: dbdiagram-socket
+            xfwd: true
+            changeOrigin: true
+            prependPath: true
+            ignorePath: false
+            stripPath: true
+            stickyWSSession: true
+
   route-all-api:
     apiEndpoints:
       - all-api
@@ -52,18 +89,3 @@ pipelines:
             prependPath: true
             ignorePath: false
             stripPath: true
-
-  route-all-socket:
-    apiEndpoints:
-      - all-socket
-    policies:
-      - request-logger:
-      - dynamic-ws-proxy:
-        - action:
-            serviceEndpoint: dbdiagram-socket
-            xfwd: true
-            changeOrigin: true
-            prependPath: true
-            ignorePath: false
-            stripPath: true
-            stickyWSSession: true
